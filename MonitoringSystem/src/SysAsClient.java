@@ -5,44 +5,63 @@ import java.rmi.registry.Registry;
 
 public class SysAsClient {
     public static void main(String[] args) {
+        // Récupérer les données depuis le serveur
         try {
-            Registry registry = LocateRegistry.getRegistry("192.168.94.193", 1098);
+            Registry registry = LocateRegistry.getRegistry("40.67.241.136", 1998);
             SensorMonitoring stub = (SensorMonitoring) registry.lookup("PatientDataService");
-            PatientMedicalFolder folder =stub.providePatientData();
-            if(isCritical(folder)){
-                System.out.println("Critical data found");
+            String data_ = stub.providePatientData();
+            PatientData data = new PatientData();
+            PatientData parsedData = data.parsePatientData(data_);
+            System.out.println("Données du patient :");
+            System.out.println("ID : " + parsedData.getPatientId());
+
+            System.out.println(parsedData.getHeartRate());
+            String cause = checkCriticalCause(parsedData);
+            if (cause != null) {
+                String patientId = parsedData.getPatientId();
+                sendAlertToDoctor(patientId, cause);
             }
+
         } catch (Exception e) {
             System.err.println("Client exception: " + e.toString());
             e.printStackTrace();
         }
-        /////////////////Server /////////////
-        try {
-            AlertProvider alert = (AlertProvider) new AlertProviderImpl();
-            Registry registry = LocateRegistry.createRegistry(1099);
-            registry.rebind("AlertGeneration", (Remote) alert);
-            System.out.println("✅ monitoring Server is ready on port 1099...");
-        } catch (RemoteException e) {
-            e.printStackTrace();
-            System.out.println("❌ Bank Operation Server Error: " + e.getMessage());
-        }
-    }
-    public static boolean isCritical(PatientMedicalFolder folder) {
-        boolean medicineOverdose = folder.isMedicineOverdose();
-        double oxygenSaturation = folder.getOxygenSaturation();
-        double pH = folder.getPh();
-        double temperature = folder.getTemperature();
-        int heartRate = folder.getHeartRate();
-        int bpSys = folder.getBpSys();
-        int respiratoryRate = folder.getRespiratoryRate();
-        if (medicineOverdose || oxygenSaturation < 90 || pH < 7.2 || pH > 7.6 ||
-                temperature < 35 || temperature > 40 || heartRate < 40 || heartRate > 130 ||
-                bpSys < 90 || bpSys > 180 || respiratoryRate < 8 || respiratoryRate > 30) {
-            return true;
-        }
 
-        return false;
+
     }
+
+    // Vérification des causes critiques de l'état du patient
+    public static String checkCriticalCause(PatientData data) {
+        if (data.getOxygenSaturation() < 90)
+            return "Low oxygen saturation";
+        if (data.getPh() < 7.2 || data.getPh() > 7.6)
+            return "Abnormal pH level";
+        if (data.getTemperature() < 35 || data.getTemperature() > 40)
+            return "Abnormal body temperature";
+        if (data.getHeartRate() < 40 || data.getHeartRate() > 130)
+            return "Abnormal heart rate";
+        if (data.getBpSys() < 90 || data.getBpSys() > 180)
+            return "Abnormal blood pressure (systolic)";
+        if (data.getRespiratoryRate() < 8 || data.getRespiratoryRate() > 30)
+            return "Abnormal respiratory rate";
+        if (data.getCausesRespiratoryImbalance() != null && !data.getCausesRespiratoryImbalance().isEmpty())
+            return data.getCausesRespiratoryImbalance();
+
+        return null;
+    }
+    public static void sendAlertToDoctor(String patientId, String cause) throws RemoteException {
+        try {
+            AlertProvider alert = new AlertProviderImpl();
+            Registry registry = LocateRegistry.createRegistry(1098);
+            registry.rebind("AlertGeneration", alert);
+            alert.sendAlert(patientId, cause);
+        }catch(Exception e) {
+            System.err.println("server exception: " + e.toString());
+            e.printStackTrace();
+
+        }
+    }
+
 
 
 }
