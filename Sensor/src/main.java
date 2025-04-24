@@ -10,7 +10,7 @@ public  class main {
         try {
 
             SensorMonitoring stub = new Sensor();
-            Registry registry = LocateRegistry.createRegistry(1099);
+            Registry registry = LocateRegistry.createRegistry(1098);
             registry.rebind("PatientDataService", stub);
             System.out.println("✅ Bank Operation Server is ready on port 1099...");
         } catch (Exception e) {

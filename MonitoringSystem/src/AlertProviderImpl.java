@@ -20,6 +20,9 @@ public class AlertProviderImpl extends UnicastRemoteObject implements AlertProvi
     // Méthode appelée par le docteur pour récupérer l’alerte
     @Override
     public String getAlert() throws RemoteException {
+        if (lastAlert.equals("Aucune alerte reçue pour l'instant.")) {
+            return "Aucune alerte reçue pour l'instant.";
+        }
         return lastAlert;
     }
 }

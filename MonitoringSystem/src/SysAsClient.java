@@ -5,32 +5,36 @@ import java.rmi.registry.Registry;
 
 public class SysAsClient {
     public static void main(String[] args) {
-        // Récupérer les données depuis le serveur
         try {
-            Registry registry = LocateRegistry.getRegistry("40.67.241.136", 1998);
+            // Étape 1 : Récupération des données depuis le serveur
+            Registry registry = LocateRegistry.getRegistry("localhost", 1098);
             SensorMonitoring stub = (SensorMonitoring) registry.lookup("PatientDataService");
             String data_ = stub.providePatientData();
+
             PatientData data = new PatientData();
             PatientData parsedData = data.parsePatientData(data_);
-            System.out.println("Données du patient :");
-            System.out.println("ID : " + parsedData.getPatientId());
 
-            System.out.println(parsedData.getHeartRate());
+            System.out.println("Données du patient :");
+            System.out.println(parsedData);
+
+            // Étape 2 : Vérification des alertes
             String cause = checkCriticalCause(parsedData);
             if (cause != null) {
                 String patientId = parsedData.getPatientId();
                 sendAlertToDoctor(patientId, cause);
             }
 
+            // Étape 3 : Publication du patient dans le service GetPatientData
+            GetPatientData patient = new GetPatientDataImpl(parsedData); // ici on passe les données
+            Registry reg = LocateRegistry.createRegistry(2000);
+            reg.rebind("PatientData", (Remote) patient);
+
         } catch (Exception e) {
-            System.err.println("Client exception: " + e.toString());
+            System.err.println("Erreur dans le client : " + e);
             e.printStackTrace();
         }
-
-
     }
 
-    // Vérification des causes critiques de l'état du patient
     public static String checkCriticalCause(PatientData data) {
         if (data.getOxygenSaturation() < 90)
             return "Low oxygen saturation";
@@ -49,19 +53,16 @@ public class SysAsClient {
 
         return null;
     }
+
     public static void sendAlertToDoctor(String patientId, String cause) throws RemoteException {
         try {
             AlertProvider alert = new AlertProviderImpl();
-            Registry registry = LocateRegistry.createRegistry(1098);
+            Registry registry = LocateRegistry.createRegistry(1099);
             registry.rebind("AlertGeneration", alert);
             alert.sendAlert(patientId, cause);
-        }catch(Exception e) {
-            System.err.println("server exception: " + e.toString());
+        } catch (Exception e) {
+            System.err.println("Erreur lors de l’envoi d’alerte : " + e);
             e.printStackTrace();
-
         }
     }
-
-
-
 }
