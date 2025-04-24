@@ -7,7 +7,7 @@ public class SysAsClient {
     public static void main(String[] args) {
         try {
             // Étape 1 : Récupération des données depuis le serveur
-            Registry registry = LocateRegistry.getRegistry("localhost", 1098);
+            Registry registry = LocateRegistry.getRegistry("40.67.241.136", 1099);
             SensorMonitoring stub = (SensorMonitoring) registry.lookup("PatientDataService");
             String data_ = stub.providePatientData();
 
@@ -57,7 +57,7 @@ public class SysAsClient {
     public static void sendAlertToDoctor(String patientId, String cause) throws RemoteException {
         try {
             AlertProvider alert = new AlertProviderImpl();
-            Registry registry = LocateRegistry.createRegistry(1099);
+            Registry registry = LocateRegistry.createRegistry(1098);
             registry.rebind("AlertGeneration", alert);
             alert.sendAlert(patientId, cause);
         } catch (Exception e) {

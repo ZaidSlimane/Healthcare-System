@@ -91,7 +91,7 @@ public class Doctor {
 
     private static void getAlert(JTextArea outputArea) {
         try {
-            Registry registry = LocateRegistry.getRegistry("localhost", 1099);
+            Registry registry = LocateRegistry.getRegistry("localhost", 1098);
             AlertProvider alertProvider = (AlertProvider) registry.lookup("AlertGeneration");
             String alertMessage = alertProvider.getAlert();
             outputArea.setText("🚨 Alertes médicales :\n\n" + alertMessage);
@@ -114,13 +114,12 @@ public class Doctor {
     private static void sendInstruction(JTextField instructionField, JTextField patientIdField, JTextArea outputArea) {
         String instruction = instructionField.getText().trim();
         String patientId = patientIdField.getText().trim();
-
         if (instruction.isEmpty() || patientId.isEmpty()) {
             outputArea.setText("⚠️ Veuillez entrer l'instruction et l'ID du patient.");
         } else {
             try {
-                PorovideInstImpl inst = new PorovideInstImpl();
-                Registry reg = LocateRegistry.createRegistry(2001);
+                ProvideInst inst = new PorovideInstImpl();
+                Registry reg = LocateRegistry.createRegistry(2002);
                 reg.rebind("Instructions", inst);
                 inst.setInstructionDetails(patientId, instruction);
                 outputArea.setText("✅ Instruction envoyée pour le patient ID " + patientId + " : " + instruction);
